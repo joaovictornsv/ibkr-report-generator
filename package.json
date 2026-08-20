@@ -1,0 +1,15 @@
+{
+  "name": "ibkr-report-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/content/index.js --bundle --outfile=dist/content.js --format=iife --platform=browser --target=es2020",
+    "release": "node scripts/package-release.mjs",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.0.0"
+  }
+}
