@@ -1,94 +1,99 @@
-# IBKR Wallet Report
+# Relatório de Carteira IBKR
 
-Unofficial browser extension for **IBKR Client Portal**. One click collects your Dashboard NAV chart and Portfolio positions, then downloads a self-contained HTML report (`carteira-YYYY-MM-DD.html`).
+Extensão gratuita para o **Portal do Cliente IBKR**. Com um clique, ela baixa um arquivo HTML com o resumo da sua carteira.
 
-All processing happens in your browser. Nothing is sent to a server.
-
----
-
-## For most users (install from zip)
-
-You do **not** need Node.js or the command line.
-
-1. Go to **[Releases](../../releases)** and download the latest **`ibkr-wallet-report-X.Y.Z.zip`**.
-2. **Extract** the zip to a folder you will keep (e.g. `Documents/ibkr-wallet-report`).
-3. Open **`INSTALL.md`** inside that folder and follow the steps for **Chrome**, **Edge**, **Brave**, **Firefox**, or **LibreWolf**.
-
-That’s it.
+> Ferramenta não oficial. Não tem ligação com a Interactive Brokers.
 
 ---
 
-## Usage
+## Privacidade
 
-1. Log into [IBKR Client Portal](https://www.interactivebrokers.com/portal).
-2. Click **Download wallet report** (bottom-right).
-3. Wait for **Collecting chart…** → **Collecting positions…** → **Done**.
-4. Open the downloaded `carteira-YYYY-MM-DD.html` file in any browser.
-
-If a step fails, read the message near the button and click again.
+- Lê apenas as páginas do Portal IBKR enquanto você está logado
+- **Não** envia sua carteira para nenhum servidor
+- **Não** pede senha, API key ou dados da IBKR
+- Não é afiliada à Interactive Brokers
 
 ---
 
-## What’s in the report
+## O que faz
 
-- Total market value (sum of stock positions), position count, date, currency
-- Monthly NAV chart (last 1Y value per month)
-- Holdings sorted by value: ticker, name, quantity, % of total
-- Stock logos when you open the HTML file
+- Mostra um botão **Download wallet report** no Portal do Cliente
+- Coleta o gráfico do Dashboard e suas posições
+- Baixa um arquivo **`carteira-AAAA-MM-DD.html`** que você abre no navegador
 
-Omitted on purpose: personal disclaimer, strategy split, country breakdown.
+O relatório inclui valor total, gráfico mensal e lista de ações ordenada por valor.
 
----
+Exemplo do arquivo gerado:
 
-## Privacy
-
-- Reads the Client Portal page only on `*.interactivebrokers.com` (and `.co.uk`).
-- Uses browser session storage to resume if the scrape spans two portal pages.
-- No IBKR API keys; no data sent to third-party servers.
+![Relatório HTML da carteira](docs/images/03-carteira-relatorio.png)
 
 ---
 
-## For developers
+## Como usar (depois de instalar)
 
-### Setup
+1. Entre no [Portal do Cliente IBKR](https://www.interactivebrokers.com/portal)
+2. Clique no botão azul **Download wallet report** (canto inferior direito)
+3. Aguarde: **Collecting chart…** → **Collecting positions…** → **Done**
+4. Abra o arquivo `carteira-….html` **no navegador** (Chrome, Firefox, Edge, etc.) — clique duas vezes no arquivo ou arraste para uma janela do navegador
 
-```bash
-npm install
-npm run build   # writes dist/content.js
-npm test
-```
-
-Source lives in `src/`; browsers load the bundled `dist/content.js` (required for Firefox / LibreWolf).
-
-### Create a release zip
-
-```bash
-npm run release
-```
-
-Outputs:
-
-- `release/ibkr-wallet-report-<version>/` — folder to sanity-check
-- `release/ibkr-wallet-report-<version>.zip` — **upload this to GitHub Releases**
-
-The zip contains only what end users need (`manifest.json`, `dist/`, CSS, `INSTALL.md`). No source code or `node_modules`.
-
-### Publishing a GitHub Release
-
-1. Run `npm run release`.
-2. Create a new release on GitHub, tag e.g. `v1.0.0`.
-3. Attach `release/ibkr-wallet-report-1.0.0.zip`.
-4. Paste a short note pointing users to extract the zip and open `INSTALL.md`.
-
-Bump `version` in `package.json` before each release (the script syncs it into the packaged `manifest.json`).
+![Botão da extensão no Portal do Cliente](docs/images/01-botao-portal.png)
 
 ---
 
-## Limitations
+## Como baixar e instalar
 
-- Unofficial; IBKR can change their website layout at any time.
-- Not published on Chrome Web Store or Firefox Add-ons (manual zip install).
-- Firefox / LibreWolf: temporary add-on — reload after browser restart.
-- No sector grouping (positions table has no sector column).
+### 1. Baixar
 
-See [PLAN.md](PLAN.md) for product scope and architecture.
+1. Abra a página de **[Releases](https://github.com/joaovictornsv/ibkr-report-generator/releases)** do projeto
+2. Baixe o arquivo **`ibkr-wallet-report-X.Y.Z.zip`** — **não** baixe “Source code”
+
+![Baixar o zip na página Releases](docs/images/02-download-release.png)
+
+3. **Extraia** o zip para uma pasta fixa. Exemplos:
+
+   - **Windows:** clique direito no zip → **Extrair tudo…** → escolha uma pasta (ex.: `Documentos\ibkr-wallet-report`)
+   - **Mac:** duplo clique no zip (o Finder cria uma pasta) → se quiser, mova para `Documentos/ibkr-wallet-report`
+   - **Linux:** clique direito no zip → **Extrair aqui** ou **Extrair para…** → escolha uma pasta (ex.: `~/ibkr-wallet-report`)
+
+4. **Não apague** essa pasta depois — o navegador continua usando ela
+
+Dentro da pasta extraída deve existir o arquivo **`manifest.json`**.
+
+---
+
+### 2. Chrome, Edge ou Brave
+
+1. No navegador, abra **`chrome://extensions`** (Edge: `edge://extensions` · Brave: `brave://extensions`)
+2. Ative o **Modo do desenvolvedor**:
+   - **Chrome / Brave:** interruptor no canto **superior direito** da página
+   - **Edge:** interruptor **Modo do desenvolvedor** (canto inferior esquerdo ou superior, conforme a versão)
+3. Clique em **Carregar sem compactação** (Load unpacked) — no Chrome/Brave costuma aparecer no canto **superior esquerdo** depois de ativar o modo desenvolvedor
+4. Selecione a **pasta extraída** (a que contém `manifest.json`)
+5. Confira se **IBKR Wallet Report** aparece na lista, sem erro
+
+---
+
+### 3. Firefox ou LibreWolf
+
+No Firefox e no LibreWolf a instalação é **temporária** — repita estes passos **depois de fechar o navegador**.
+
+1. Abra **`about:debugging#/runtime/this-firefox`**
+2. Clique em **Load Temporary Add-on…** / **Carregar extensão temporária…**
+3. Dentro da pasta extraída, escolha o arquivo **`manifest.json`**
+4. Confira se **IBKR Wallet Report** aparece na lista, sem erro
+
+---
+
+## Problemas comuns
+
+| Problema | O que fazer |
+|----------|-------------|
+| Botão não aparece | Atualize a página do Portal. No Firefox/LibreWolf, carregue a extensão de novo. |
+| Erro ao instalar | Confira se **extraiu** o zip e escolheu a pasta certa (com `manifest.json` dentro). |
+| Não baixou o HTML | Permita downloads do site `interactivebrokers.com` no navegador. |
+
+---
+
+## Para desenvolvedores
+
+Detalhes técnicos, testes e publicação de versões: **[TECH_README.md](TECH_README.md)**
