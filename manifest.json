@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IBKR Wallet Report",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Download a self-contained HTML wallet report from IBKR Client Portal.",
   "browser_specific_settings": {
     "gecko": {

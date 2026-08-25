@@ -3,8 +3,11 @@ export function ext() {
   return globalThis.browser ?? globalThis.chrome;
 }
 
-/** Session storage (Firefox 115+, Chrome 102+). Falls back to local. */
+/**
+ * Extension storage for content scripts.
+ * `storage.session` exists in Chrome/Firefox but is not allowed from content
+ * scripts by default ("Access to storage is not allowed from this context").
+ */
 export function sessionStorage() {
-  const storage = ext().storage;
-  return storage.session ?? storage.local;
+  return ext().storage.local;
 }
