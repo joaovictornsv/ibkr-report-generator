@@ -10,7 +10,6 @@ Chrome Manifest V3 browser extension that injects a button on IBKR Client Portal
 
 - **Source:** `src/`
 - **Browser bundle:** `dist/content.js` (esbuild IIFE — required for Firefox/LibreWolf)
-- **Architecture plan:** [PLAN.md](PLAN.md)
 - **Detailed install (English):** [INSTALL.md](INSTALL.md) (included in release zip)
 
 ---
