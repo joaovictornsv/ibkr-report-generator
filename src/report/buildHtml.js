@@ -103,6 +103,9 @@ export function buildHtml(data) {
     .stock-right { text-align: right; }
     .stock-value { font-weight: 600; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
     footer { text-align: center; font-size: 0.6875rem; color: var(--muted); margin-top: 20px; }
+    .footer-credit { margin-top: 6px; opacity: 0.85; }
+    .footer-credit a { color: inherit; text-decoration: none; }
+    .footer-credit a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
     @media (max-width: 480px) {
       .total { font-size: 2rem; }
       .stock { grid-template-columns: 36px 1fr auto; gap: 10px; }
@@ -127,7 +130,10 @@ export function buildHtml(data) {
     </div>
     <h2 class="section-title">Posições · <span id="count"></span></h2>
     <div class="sectors" id="stocks"></div>
-    <footer>Dados em ${footerDate} · ${data.currency}</footer>
+    <footer>
+      Dados em ${footerDate} · ${data.currency}
+      <div class="footer-credit">Gerado com <a href="https://github.com/joaovictornsv/ibkr-report-generator" target="_blank" rel="noopener noreferrer">IBKR Wallet Report</a></div>
+    </footer>
   </div>
   <script>
     const DATA = ${dataJson};

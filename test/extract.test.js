@@ -108,6 +108,7 @@ test('mergeReportData and buildHtml produce valid report', () => {
   assert.match(html, /"sector":"Financial Services"/);
   assert.match(html, /sector-card/);
   assert.match(html, /Serviços financeiros/);
+  assert.match(html, /IBKR Wallet Report/);
   assert.doesNotMatch(html, /Estratégia atual/);
   assert.doesNotMatch(html, /Países/);
   assert.doesNotMatch(html, /Apenas manter/);
