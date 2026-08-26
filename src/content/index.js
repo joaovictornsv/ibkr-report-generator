@@ -14,15 +14,18 @@ import { downloadHtml, walletFilename } from '../download.js';
 
 const BTN_ID = 'ibkr-wallet-btn';
 const TOAST_ID = 'ibkr-wallet-toast';
+const DEFAULT_BTN_LABEL = 'Download wallet report';
 
 let running = false;
+let buttonResetTimer = null;
 
 function ensureUi() {
   if (!document.getElementById(BTN_ID)) {
     const btn = document.createElement('button');
     btn.id = BTN_ID;
     btn.type = 'button';
-    btn.textContent = 'Download wallet report';
+    btn.textContent = running ? 'Working…' : DEFAULT_BTN_LABEL;
+    btn.disabled = running;
     btn.addEventListener('click', onButtonClick);
     document.body.appendChild(btn);
   }
@@ -34,14 +37,36 @@ function ensureUi() {
   }
 }
 
+function watchUi() {
+  const observer = new MutationObserver(() => {
+    if (!document.getElementById(BTN_ID) || !document.getElementById(TOAST_ID)) {
+      ensureUi();
+    }
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
 function setButtonLabel(text, disabled = false) {
+  ensureUi();
   const btn = document.getElementById(BTN_ID);
   if (!btn) return;
   btn.textContent = text;
   btn.disabled = disabled;
 }
 
+function scheduleButtonReset(label, delayMs = 2500) {
+  clearTimeout(buttonResetTimer);
+  setButtonLabel(label, false);
+  if (delayMs > 0) {
+    buttonResetTimer = setTimeout(() => {
+      buttonResetTimer = null;
+      setButtonLabel(DEFAULT_BTN_LABEL, false);
+    }, delayMs);
+  }
+}
+
 function showToast(message, ms = 6000) {
+  ensureUi();
   const toast = document.getElementById(TOAST_ID);
   if (!toast) return;
   toast.textContent = message;
@@ -51,7 +76,13 @@ function showToast(message, ms = 6000) {
 }
 
 async function onButtonClick() {
-  if (running) return;
+  if (running) {
+    showToast('Report already in progress…', 2500);
+    return;
+  }
+
+  clearTimeout(buttonResetTimer);
+  buttonResetTimer = null;
   running = true;
   setButtonLabel('Starting…', true);
 
@@ -60,7 +91,7 @@ async function onButtonClick() {
   } catch (err) {
     console.error('[IBKR Wallet]', err);
     showToast(err.message || 'Report failed');
-    setButtonLabel('Download wallet report', false);
+    setButtonLabel(DEFAULT_BTN_LABEL, false);
   } finally {
     running = false;
   }
@@ -109,25 +140,29 @@ async function runOrchestrator() {
   downloadHtml(html, walletFilename(data.asOf));
 
   await setRunState(null);
-  setButtonLabel('Done', true);
-  setTimeout(() => setButtonLabel('Download wallet report', false), 2500);
+  scheduleButtonReset('Done');
 }
 
 async function resumeIfNeeded() {
   const state = await getRunState();
-  if (state && (state.chart || state.step)) {
-    running = true;
-    setButtonLabel(state.positions ? 'Finishing…' : state.chart ? 'Collecting positions…' : 'Collecting chart…', true);
-    try {
-      await runOrchestrator();
-    } catch (err) {
-      console.error('[IBKR Wallet resume]', err);
-      setButtonLabel('Download wallet report', false);
-    } finally {
-      running = false;
-    }
+  if (!state || (!state.chart && !state.step)) return;
+
+  running = true;
+  setButtonLabel(
+    state.positions ? 'Finishing…' : state.chart ? 'Collecting positions…' : 'Collecting chart…',
+    true,
+  );
+  try {
+    await runOrchestrator();
+  } catch (err) {
+    console.error('[IBKR Wallet resume]', err);
+    showToast(err.message || 'Report failed');
+    setButtonLabel(DEFAULT_BTN_LABEL, false);
+  } finally {
+    running = false;
   }
 }
 
 ensureUi();
+watchUi();
 resumeIfNeeded();
