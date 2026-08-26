@@ -36,6 +36,8 @@ src/extract/chart.js        # Highcharts NAV extract
 src/extract/positions.js    # Positions table extract
 src/extract/navigate.js     # SPA nav, waits, session state
 src/report/buildHtml.js     # HTML report generator
+src/data/ticker-sectors.json # Offline ticker → sector lookup
+src/data/sectors.js          # Sector labels + lookup helper
 src/download.js
 src/extApi.js               # browser/chrome storage shim
 test/fixtures/              # IBKR HTML dumps for regression tests
@@ -98,6 +100,7 @@ Content script is bundled — do not load `src/content/index.js` directly in man
 - Permission: `storage` only
 - No background service worker in v1
 - Report HTML loads stock logos from `financialmodelingprep.com` when the **downloaded file** is opened (not at scrape time)
+- Sectors come from bundled `src/data/ticker-sectors.json`; unknown tickers fall back to **Outros**
 
 ---
 
@@ -105,7 +108,7 @@ Content script is bundled — do not load `src/content/index.js` directly in man
 
 - Unofficial; IBKR DOM changes can break selectors
 - Not on Chrome Web Store or Firefox Add-ons (manual zip install)
-- No sector grouping (positions table has no GICS column)
+- Sector map is static (add tickers to `src/data/ticker-sectors.json` as needed)
 - Firefox/LibreWolf: reload temporary add-on after restart
 
 ---

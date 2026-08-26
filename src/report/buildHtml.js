@@ -1,3 +1,5 @@
+import { DEFAULT_SECTOR, lookupSector, SECTOR_LABELS } from '../data/sectors.js';
+
 /**
  * Build self-contained wallet HTML report.
  * @param {{ asOf: string, currency: string, total: number, stocks: Array, months: Array }} data
@@ -6,6 +8,7 @@
 export function buildHtml(data) {
   const footerDate = formatFooterDate(data.asOf);
   const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
+  const sectorLabelsJson = JSON.stringify(SECTOR_LABELS).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -57,10 +60,22 @@ export function buildHtml(data) {
     .chart-dot.active { r: 6; }
     .chart-hit { fill: transparent; cursor: pointer; }
     .section-title { font-size: 0.8125rem; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
-    .holdings-card {
+    .sectors { display: flex; flex-direction: column; gap: 12px; }
+    .sector-card {
       background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 16px 20px 12px;
     }
+    .sector-header {
+      display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;
+    }
+    .sector-name { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .sector-meta { display: flex; align-items: center; gap: 10px; }
+    .sector-value { font-size: 0.8125rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sector-pct {
+      font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft);
+      padding: 2px 8px; border-radius: 99px; font-variant-numeric: tabular-nums;
+    }
+    .sector-stocks { display: flex; flex-direction: column; gap: 2px; }
     .stock {
       display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center;
       padding: 10px 4px; border-radius: 10px; transition: background 0.15s;
@@ -87,7 +102,6 @@ export function buildHtml(data) {
     }
     .stock-right { text-align: right; }
     .stock-value { font-weight: 600; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
-    .stock-pct { font-size: 0.75rem; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
     footer { text-align: center; font-size: 0.6875rem; color: var(--muted); margin-top: 20px; }
     @media (max-width: 480px) {
       .total { font-size: 2rem; }
@@ -112,11 +126,12 @@ export function buildHtml(data) {
       <div class="chart-labels" id="chart-labels"></div>
     </div>
     <h2 class="section-title">Posições · <span id="count"></span></h2>
-    <div class="holdings-card" id="stocks"></div>
+    <div class="sectors" id="stocks"></div>
     <footer>Dados em ${footerDate} · ${data.currency}</footer>
   </div>
   <script>
     const DATA = ${dataJson};
+    const SECTOR_LABELS = ${sectorLabelsJson};
     ${REPORT_SCRIPT}
   </script>
 </body>
@@ -132,6 +147,7 @@ export function mergeReportData(chartData, positionsData) {
     .map((h) => ({
       ticker: h.ticker,
       name: h.name,
+      sector: lookupSector(h.ticker),
       qty: h.qty,
       value: Math.round(h.value * 100) / 100,
       pct: total > 0 ? Math.round((h.value / total) * 1000) / 10 : 0,
@@ -237,16 +253,51 @@ const REPORT_SCRIPT = `
       labelEls.push(span);
     });
 
-    document.getElementById('stocks').innerHTML = DATA.stocks.map(s =>
-      '<div class="stock">' +
-        '<div class="logo"><img src="https://financialmodelingprep.com/image-stock/' + s.ticker + '.png" alt="' + s.ticker + '" onerror="this.style.display=\\'none\\';this.parentElement.textContent=\\'' + s.ticker.slice(0,2) + '\\'"></div>' +
+    function sectorLabel(name) {
+      return SECTOR_LABELS[name] || name;
+    }
+
+    function stockRow(s) {
+      return '<div class="stock">' +
+        '<div class="logo"><img src="https://financialmodelingprep.com/image-stock/' + s.ticker + '.png" alt="' + s.ticker + '" onerror="this.style.display=\\'none\\';this.parentElement.textContent=\\'' + s.ticker.slice(0, 2) + '\\'"></div>' +
         '<div class="stock-info"><div class="stock-top">' +
           '<a class="stock-name" href="' + investidor10Url(s.ticker) + '" target="_blank" rel="noopener noreferrer">' + s.name + '</a>' +
           '<span class="stock-ticker">' + s.ticker + '</span>' +
           '<span class="stock-qty">×' + s.qty + '</span>' +
         '</div></div>' +
-        '<div class="stock-right"><div class="stock-value">' + fmtCents(s.value) + '</div>' +
-        '<div class="stock-pct">' + s.pct + '%</div></div>' +
-      '</div>'
-    ).join('');
+        '<div class="stock-right"><div class="stock-value">' + fmtCents(s.value) + '</div></div>' +
+      '</div>';
+    }
+
+    const sectorMap = {};
+    DATA.stocks.forEach(s => {
+      const key = s.sector || '${DEFAULT_SECTOR}';
+      if (!sectorMap[key]) sectorMap[key] = { value: 0, stocks: [] };
+      sectorMap[key].value += s.value;
+      sectorMap[key].stocks.push(s);
+    });
+    const sectors = Object.entries(sectorMap)
+      .map(([name, data]) => ({
+        name,
+        value: data.value,
+        pct: Math.round(data.value / DATA.total * 1000) / 10,
+        stocks: data.stocks.sort((a, b) => b.value - a.value),
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    const container = document.getElementById('stocks');
+    sectors.forEach(sec => {
+      const group = document.createElement('div');
+      group.className = 'sector-card';
+      group.innerHTML =
+        '<div class="sector-header">' +
+          '<span class="sector-name">' + sectorLabel(sec.name) + '</span>' +
+          '<div class="sector-meta">' +
+            '<span class="sector-value">' + fmtCents(sec.value) + '</span>' +
+            '<span class="sector-pct">' + sec.pct + '%</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sector-stocks">' + sec.stocks.map(stockRow).join('') + '</div>';
+      container.appendChild(group);
+    });
 `.trim();

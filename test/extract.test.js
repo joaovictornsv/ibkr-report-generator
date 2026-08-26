@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { extractPositions } from '../src/extract/positions.js';
+import { extractPositions, resolveMarketValue } from '../src/extract/positions.js';
 import { extractChart, parseAriaLabel, collapseToMonthly } from '../src/extract/chart.js';
 import { mergeReportData, buildHtml } from '../src/report/buildHtml.js';
 
@@ -15,6 +15,13 @@ function loadFixture(name) {
   const html = readFileSync(join(fixtures, name), 'utf8');
   return new JSDOM(html).window.document;
 }
+
+test('resolveMarketValue multiplies qty when raw value is unit price', () => {
+  assert.equal(resolveMarketValue(6, 598.5, 598.5), 3591);
+  assert.equal(resolveMarketValue(101, 32.67, 32.67), 3299.67);
+  assert.equal(resolveMarketValue(6, 573.7, 3442.14), 3442.14);
+  assert.equal(resolveMarketValue(1, 3616, 3616), 3616);
+});
 
 test('extractPositions parses raw-stocks fixture', () => {
   const doc = loadFixture('raw-stocks.html');
@@ -91,12 +98,16 @@ test('mergeReportData and buildHtml produce valid report', () => {
   assert.equal(data.total, 28008.77);
   assert.equal(data.stocks.length, 19);
   assert.equal(data.stocks[0].ticker, 'MA');
+  assert.equal(data.stocks[0].sector, 'Financial Services');
   assert.ok(data.stocks[0].pct > 0);
 
   const html = buildHtml(data);
   assert.match(html, /Carteira de investimentos/);
   assert.match(html, /Evolução mensal/);
   assert.match(html, /"ticker":"MA"/);
+  assert.match(html, /"sector":"Financial Services"/);
+  assert.match(html, /sector-card/);
+  assert.match(html, /Serviços financeiros/);
   assert.doesNotMatch(html, /Estratégia atual/);
   assert.doesNotMatch(html, /Países/);
   assert.doesNotMatch(html, /Apenas manter/);

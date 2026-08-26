@@ -11,6 +11,7 @@ export function extractPositions(doc) {
 
   const marketValueCol = findColumnIndex(table, /sort by market value/i);
   const positionCol = findColumnIndex(table, /sort by position/i);
+  const lastPriceCol = findColumnIndex(table, /sort by last price/i);
 
   const holdings = [];
   for (const row of table.querySelectorAll('tr[data-id][aria-label], tr._tbgr[aria-label]')) {
@@ -28,8 +29,12 @@ export function extractPositions(doc) {
       || '0';
     const qty = parseNumber(qtyText);
 
+    const lastPriceCell = lastPriceCol >= 0 ? cells[lastPriceCol] : cells[3];
+    const lastPrice = parseNumber(lastPriceCell?.textContent || '0');
+
     const mvCell = marketValueCol >= 0 ? cells[marketValueCol] : cells[5];
-    const value = parseNumber(mvCell?.textContent || '0');
+    const rawValue = parseNumber(mvCell?.textContent || '0');
+    const value = resolveMarketValue(qty, lastPrice, rawValue);
     if (!value) continue;
 
     holdings.push({ ticker: ticker.toUpperCase(), name, qty, value });
@@ -42,18 +47,28 @@ export function extractPositions(doc) {
 }
 
 function findColumnIndex(table, labelPattern) {
-  for (const th of table.querySelectorAll('th')) {
+  const headers = [...table.querySelectorAll('thead tr th')];
+  for (let i = 0; i < headers.length; i++) {
+    const th = headers[i];
     const button = th.querySelector('[aria-label]');
     const label = button?.getAttribute('aria-label')
       || th.getAttribute('aria-label')
       || th.textContent
       || '';
-    if (labelPattern.test(label)) {
-      const idx = Number(th.getAttribute('aria-colindex'));
-      if (idx > 0) return idx - 1;
-    }
+    if (labelPattern.test(label)) return i;
   }
   return -1;
+}
+
+/** When IBKR column mapping is off, market value may contain the unit last price. */
+export function resolveMarketValue(qty, lastPrice, rawValue) {
+  if (!rawValue) {
+    return qty > 0 && lastPrice > 0 ? round2(qty * lastPrice) : 0;
+  }
+  if (qty > 1 && lastPrice > 0 && Math.abs(rawValue - lastPrice) / lastPrice < 0.01) {
+    return round2(qty * lastPrice);
+  }
+  return round2(rawValue);
 }
 
 function parseNumber(text) {
